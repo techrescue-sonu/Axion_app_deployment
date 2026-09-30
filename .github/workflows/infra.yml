@@ -244,17 +244,6 @@ jobs:
 
 
       # ------------------------------------------------------
-      # Download Plan
-      # ------------------------------------------------------
-
-      - name: Download Terraform Plan
-        uses: actions/download-artifact@v4
-        with:
-          name: terraform-plan
-          path: ${{ env.TF_WORKING_DIR }}
-
-
-      # ------------------------------------------------------
       # Terraform Init
       # ------------------------------------------------------
 

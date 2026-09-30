@@ -1,36 +1,28 @@
 # ============================================================
-# Terraform Azure Infrastructure Pipeline
+# TERRAFORM AZURE DEPLOYMENT
 # ============================================================
 
-name: Terraform Azure Infrastructure
+name: Terraform Azure Deployment
+
 
 # ============================================================
 # TRIGGERS
 # ============================================================
-# 1. Push to main
-# 2. Pull Request to main
-# 3. Manual execution from GitHub Actions UI
-# ============================================================
 
 on:
 
-  # ----------------------------------------------------------
-  # Trigger 1: main branch par push
-  # ----------------------------------------------------------
+  # main branch
   push:
     branches:
       - main
+      - 'feature/**'
 
-  # ----------------------------------------------------------
-  # Trigger 2: main branch ke against Pull Request
-  # ----------------------------------------------------------
+  # Pull Requests
   pull_request:
     branches:
       - main
 
-  # ----------------------------------------------------------
-  # Trigger 3: Manual Run
-  # ----------------------------------------------------------
+  # Manual execution
   workflow_dispatch:
 
 
@@ -44,32 +36,46 @@ permissions:
 
 
 # ============================================================
-# STAGE 1
-# Terraform Init -> Validate -> Plan
+# TERRAFORM VARIABLES
+# ============================================================
+
+env:
+
+  # Terraform working directory
+  TF_WORKING_DIR: infrastructure/terraform/enviroments/dev
+
+  # Azure backend
+  ARM_RESOURCE_GROUP: sonu-axion-rg
+  ARM_STORAGE_ACCOUNT: axionstorageaccountsonu
+  ARM_CONTAINER: axion-container
+  ARM_KEY: techrescue.terraform.tfstate
+
+
+# ============================================================
+# STAGE 1 - VALIDATE
 # ============================================================
 
 jobs:
 
-  terraform-plan:
+  terraform-validate:
 
-    name: Terraform Init Validate Plan
+    name: Terraform Init FMT Validate
 
-    # Windows Self-Hosted Runner
     runs-on: [self-hosted, Windows, X64]
 
     steps:
 
-      # ======================================================
+      # ------------------------------------------------------
       # Checkout repository
-      # ======================================================
+      # ------------------------------------------------------
 
       - name: Checkout Repository
         uses: actions/checkout@v4
 
 
-      # ======================================================
-      # Azure Login using OIDC
-      # ======================================================
+      # ------------------------------------------------------
+      # Azure Login
+      # ------------------------------------------------------
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -79,80 +85,75 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
 
-      # ======================================================
-      # Check Terraform version
-      # ======================================================
+      # ------------------------------------------------------
+      # Check Terraform
+      # ------------------------------------------------------
 
       - name: Terraform Version
         shell: powershell
         run: terraform --version
 
 
-      # ======================================================
+      # ------------------------------------------------------
+      # Terraform Format Check
+      # ------------------------------------------------------
+
+      - name: Terraform Format Check
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        shell: powershell
+        run: terraform fmt -check -recursive
+
+
+      # ------------------------------------------------------
       # Terraform Init
-      # ======================================================
+      # ------------------------------------------------------
 
       - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
         shell: powershell
-        run: terraform init
+        run: |
+          terraform init `
+            -backend-config="resource_group_name=${{ env.ARM_RESOURCE_GROUP }}" `
+            -backend-config="storage_account_name=${{ env.ARM_STORAGE_ACCOUNT }}" `
+            -backend-config="container_name=${{ env.ARM_CONTAINER }}" `
+            -backend-config="key=${{ env.ARM_KEY }}"
 
 
-      # ======================================================
+      # ------------------------------------------------------
       # Terraform Validate
-      # ======================================================
+      # ------------------------------------------------------
 
       - name: Terraform Validate
+        working-directory: ${{ env.TF_WORKING_DIR }}
         shell: powershell
         run: terraform validate
 
 
-      # ======================================================
-      # Terraform Plan
-      # ======================================================
-
-      - name: Terraform Plan
-        shell: powershell
-        run: terraform plan -out=tfplan
-
-
-      # ======================================================
-      # Upload Terraform Plan
-      # ======================================================
-
-      - name: Upload Terraform Plan
-        uses: actions/upload-artifact@v4
-        with:
-          name: terraform-plan
-          path: tfplan
-
-
   # ==========================================================
-  # STAGE 2
-  # Terraform Apply
+  # STAGE 2 - PLAN
   # ==========================================================
 
-  terraform-apply:
+  terraform-plan:
 
-    name: Terraform Apply
+    name: Terraform Plan
 
-    # Apply tabhi chalega jab Plan successful ho
-    needs: terraform-plan
+    needs: terraform-validate
 
     runs-on: [self-hosted, Windows, X64]
 
     steps:
 
-      # ======================================================
-      # Checkout repository
-      # ======================================================
+      # ------------------------------------------------------
+      # Checkout
+      # ------------------------------------------------------
 
       - name: Checkout Repository
         uses: actions/checkout@v4
 
 
-      # ======================================================
+      # ------------------------------------------------------
       # Azure Login
-      # ======================================================
+      # ------------------------------------------------------
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -162,29 +163,126 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
 
-      # ======================================================
-      # Download Terraform Plan
-      # ======================================================
+      # ------------------------------------------------------
+      # Terraform Version
+      # ------------------------------------------------------
+
+      - name: Terraform Version
+        shell: powershell
+        run: terraform --version
+
+
+      # ------------------------------------------------------
+      # Terraform Init
+      # ------------------------------------------------------
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        shell: powershell
+        run: |
+          terraform init `
+            -backend-config="resource_group_name=${{ env.ARM_RESOURCE_GROUP }}" `
+            -backend-config="storage_account_name=${{ env.ARM_STORAGE_ACCOUNT }}" `
+            -backend-config="container_name=${{ env.ARM_CONTAINER }}" `
+            -backend-config="key=${{ env.ARM_KEY }}"
+
+
+      # ------------------------------------------------------
+      # Terraform Plan
+      # ------------------------------------------------------
+
+      - name: Terraform Plan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        shell: powershell
+        run: terraform plan -out=tfplan
+
+
+      # ------------------------------------------------------
+      # Upload Plan
+      # ------------------------------------------------------
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan
+          path: ${{ env.TF_WORKING_DIR }}/tfplan
+
+
+  # ==========================================================
+  # STAGE 3 - APPLY
+  # ==========================================================
+
+  terraform-apply:
+
+    name: Terraform Apply
+
+    # --------------------------------------------------------
+    # Apply only after Plan succeeds
+    # --------------------------------------------------------
+
+    needs: terraform-plan
+
+    # --------------------------------------------------------
+    # Apply only on main
+    # --------------------------------------------------------
+
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    runs-on: [self-hosted, Windows, X64]
+
+    steps:
+
+      # ------------------------------------------------------
+      # Checkout
+      # ------------------------------------------------------
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+
+      # ------------------------------------------------------
+      # Azure Login
+      # ------------------------------------------------------
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+
+      # ------------------------------------------------------
+      # Download Plan
+      # ------------------------------------------------------
 
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
         with:
           name: terraform-plan
+          path: ${{ env.TF_WORKING_DIR }}
 
 
-      # ======================================================
+      # ------------------------------------------------------
       # Terraform Init
-      # ======================================================
+      # ------------------------------------------------------
 
       - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
         shell: powershell
-        run: terraform init
+        run: |
+          terraform init `
+            -backend-config="resource_group_name=${{ env.ARM_RESOURCE_GROUP }}" `
+            -backend-config="storage_account_name=${{ env.ARM_STORAGE_ACCOUNT }}" `
+            -backend-config="container_name=${{ env.ARM_CONTAINER }}" `
+            -backend-config="key=${{ env.ARM_KEY }}"
 
 
-      # ======================================================
+      # ------------------------------------------------------
       # Terraform Apply
-      # ======================================================
+      # ------------------------------------------------------
 
       - name: Terraform Apply
+        working-directory: ${{ env.TF_WORKING_DIR }}
         shell: powershell
         run: terraform apply tfplan

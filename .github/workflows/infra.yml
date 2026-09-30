@@ -1,19 +1,57 @@
-name: Azure Login Test
+# ============================================================
+# Terraform Azure Infrastructure Pipeline
+# ============================================================
+
+name: Terraform Azure Infrastructure
+
+# ============================================================
+# WHEN: Workflow kab chalega?
+# ============================================================
 
 on:
   workflow_dispatch:
 
+# ============================================================
+# PERMISSIONS
+# ============================================================
+# contents: read  -> Repository checkout ke liye
+# id-token: write -> Azure OIDC authentication ke liye
+# ============================================================
+
 permissions:
-  id-token: write
   contents: read
+  id-token: write
+
+# ============================================================
+# STAGE 1
+# Terraform Init -> Validate -> Plan
+# ============================================================
 
 jobs:
-  azure-login:
-    runs-on: [self-hosted, windows, x64]
+
+  terraform-plan:
+
+    name: Terraform Init Validate Plan
+
+    # ========================================================
+    # WHERE: Job kis runner par chalega?
+    # ========================================================
+    runs-on: [self-hosted, Windows, X64]
 
     steps:
-      - name: Checkout
+
+      # ======================================================
+      # STEP 1: Repository checkout
+      # ======================================================
+
+      - name: Checkout Repository
         uses: actions/checkout@v4
+
+      # ======================================================
+      # STEP 2: Azure Login
+      # ======================================================
+      # GitHub OIDC -> Microsoft Entra ID -> Azure
+      # ======================================================
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -22,8 +60,110 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Verify Azure connection
-        run: |
-          az account show
-          az account list --output table
-       
+      # ======================================================
+      # STEP 3: Check Terraform
+      # ======================================================
+
+      - name: Terraform Version
+        shell: powershell
+        run: terraform --version
+
+      # ======================================================
+      # STEP 4: Terraform Init
+      # ======================================================
+
+      - name: Terraform Init
+        shell: powershell
+        run: terraform init
+
+      # ======================================================
+      # STEP 5: Terraform Validate
+      # ======================================================
+
+      - name: Terraform Validate
+        shell: powershell
+        run: terraform validate
+
+      # ======================================================
+      # STEP 6: Terraform Plan
+      # ======================================================
+
+      - name: Terraform Plan
+        shell: powershell
+        run: terraform plan -out=tfplan
+
+      # ======================================================
+      # STEP 7: Upload Plan
+      # ======================================================
+      # Plan ko next job ke liye save kar rahe hain.
+      # ======================================================
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan
+          path: tfplan
+
+
+  # ==========================================================
+  # STAGE 2
+  # Terraform Apply
+  # ==========================================================
+
+  terraform-apply:
+
+    name: Terraform Apply
+
+    # ========================================================
+    # IMPORTANT:
+    # Apply tabhi chalega jab plan successful ho.
+    # ========================================================
+
+    needs: terraform-plan
+
+    runs-on: [self-hosted, Windows, X64]
+
+    steps:
+
+      # ======================================================
+      # STEP 1: Checkout Repository
+      # ======================================================
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # ======================================================
+      # STEP 2: Azure Login
+      # ======================================================
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # ======================================================
+      # STEP 3: Download Plan
+      # ======================================================
+
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-plan
+
+      # ======================================================
+      # STEP 4: Terraform Init
+      # ======================================================
+
+      - name: Terraform Init
+        shell: powershell
+        run: terraform init
+
+      # ======================================================
+      # STEP 5: Terraform Apply
+      # ======================================================
+
+      - name: Terraform Apply
+        shell: powershell
+        run: terraform apply tfplan

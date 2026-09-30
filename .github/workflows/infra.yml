@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   azure-login:
-    runs-on: runner_group1
+    runs-on: [self-hosted, windows, x64]
 
     steps:
       - name: Checkout

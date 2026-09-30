@@ -1,0 +1,133 @@
+trigger:
+  branches:
+    include:
+      - main
+      - feature/*
+
+pool:
+  name: axion_agent
+
+stages:
+  
+# ============================================================
+# STAGE 1 - VALIDATE
+# ============================================================
+  - stage: 
+    displayName: Terraform_validation
+    jobs:
+      - job:
+        displayName: Terraform_Init_FMT_validate
+        steps:
+        - task: CmdLine@2
+          displayName: "apt udpate"
+          inputs:
+              script: |
+                sudo apt-get update
+                sudo apt-get install -y unzip
+        - task: TerraformInstaller@1
+          displayName: "Install Terraform"
+          inputs:
+              terraformVersion: 'latest'
+        - task: CmdLine@2
+          displayName: "Install Nginx"
+          inputs:
+              script: 'sudo apt install nginx -y'
+        - task: CmdLine@2
+          displayName: "Install AZ Cli"
+          inputs:
+              script: 'curl -fsSL ''https://azurecliprod.blob.core.windows.net/$root/deb_install.sh'' | sudo bash'
+          
+        - task: TerraformTask@5
+          displayName: Terraform init
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform/enviroments/dev'
+            backendServiceArm: 'techrescue-application-conncontion'
+            backendAzureRmResourceGroupName: 'sonu-axion-rg'
+            backendAzureRmStorageAccountName: 'axionstorageaccountsonu'
+            backendAzureRmContainerName: 'axion-container'
+            backendAzureRmKey: 'techrescue.terraform.tfstate'
+        - task: TerraformTask@5
+          displayName: terraform validate
+          inputs:
+              provider: 'azurerm'
+              command: 'validate'
+
+
+
+
+# ============================================================
+# STAGE 2 - PLAN
+# ============================================================
+  - stage: 
+    displayName: TerraformPlan
+    jobs:
+      - job:
+        displayName: Terraform Plan & Apply
+        steps:
+          - task: TerraformInstaller@1
+            inputs:
+              terraformVersion: 'latest'
+          - task: TerraformTask@5
+            displayName: Terraform init
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform/enviroments/dev'
+              backendServiceArm: 'techrescue-application-conncontion'
+              backendAzureRmResourceGroupName: 'sonu-axion-rg'
+              backendAzureRmStorageAccountName: 'axionstorageaccountsonu'
+              backendAzureRmContainerName: 'axion-container'
+              backendAzureRmKey: 'techrescue.terraform.tfstate'
+          
+
+          - task: TerraformTask@5
+            displayName: Terraform Plan
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform/enviroments/dev'
+              environmentServiceNameAzureRM: 'techrescue-application-conncontion'
+          
+          
+
+        
+
+
+
+# ============================================================
+# STAGE 3 - APPLY
+# ============================================================
+
+  - stage: 
+    displayName: TerraformApply
+    condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
+    jobs:
+      - job:
+        displayName: Terraform Apply
+        steps:
+          - task: TerraformInstaller@1
+            inputs:
+              terraformVersion: 'latest'
+          - task: TerraformTask@5
+            displayName: Terraform init
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform/enviroments/dev'
+              backendServiceArm: 'techrescue-application-conncontion'
+              backendAzureRmResourceGroupName: 'sonu-axion-rg'
+              backendAzureRmStorageAccountName: 'axionstorageaccountsonu'
+              backendAzureRmContainerName: 'axion-container'
+              backendAzureRmKey: 'techrescue.terraform.tfstate'
+          
+          - task: TerraformTask@5
+            displayName: Terraform Apply
+            condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
+            inputs:
+              provider: 'azurerm'
+              command: 'apply'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/infrastructure/terraform/enviroments/dev'
+              environmentServiceNameAzureRM: 'techrescue-application-conncontion'
+          

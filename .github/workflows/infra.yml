@@ -4,24 +4,44 @@
 
 name: Terraform Azure Infrastructure
 
-
 # ============================================================
-# WHEN: Workflow kab chalega?
+# TRIGGERS
+# ============================================================
+# 1. Push to main
+# 2. Pull Request to main
+# 3. Manual execution from GitHub Actions UI
 # ============================================================
 
 on:
+
+  # ----------------------------------------------------------
+  # Trigger 1: main branch par push
+  # ----------------------------------------------------------
+  push:
+    branches:
+      - main
+
+  # ----------------------------------------------------------
+  # Trigger 2: main branch ke against Pull Request
+  # ----------------------------------------------------------
+  pull_request:
+    branches:
+      - main
+
+  # ----------------------------------------------------------
+  # Trigger 3: Manual Run
+  # ----------------------------------------------------------
   workflow_dispatch:
+
 
 # ============================================================
 # PERMISSIONS
-# ============================================================
-# contents: read  -> Repository checkout ke liye
-# id-token: write -> Azure OIDC authentication ke liye
 # ============================================================
 
 permissions:
   contents: read
   id-token: write
+
 
 # ============================================================
 # STAGE 1
@@ -34,24 +54,21 @@ jobs:
 
     name: Terraform Init Validate Plan
 
-    # ========================================================
-    # WHERE: Job kis runner par chalega?
-    # ========================================================
+    # Windows Self-Hosted Runner
     runs-on: [self-hosted, Windows, X64]
 
     steps:
 
       # ======================================================
-      # STEP 1: Repository checkout
+      # Checkout repository
       # ======================================================
 
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+
       # ======================================================
-      # STEP 2: Azure Login
-      # ======================================================
-      # GitHub OIDC -> Microsoft Entra ID -> Azure
+      # Azure Login using OIDC
       # ======================================================
 
       - name: Login to Azure
@@ -61,42 +78,45 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+
       # ======================================================
-      # STEP 3: Check Terraform
+      # Check Terraform version
       # ======================================================
 
       - name: Terraform Version
         shell: powershell
         run: terraform --version
 
+
       # ======================================================
-      # STEP 4: Terraform Init
+      # Terraform Init
       # ======================================================
 
       - name: Terraform Init
         shell: powershell
         run: terraform init
 
+
       # ======================================================
-      # STEP 5: Terraform Validate
+      # Terraform Validate
       # ======================================================
 
       - name: Terraform Validate
         shell: powershell
         run: terraform validate
 
+
       # ======================================================
-      # STEP 6: Terraform Plan
+      # Terraform Plan
       # ======================================================
 
       - name: Terraform Plan
         shell: powershell
         run: terraform plan -out=tfplan
 
+
       # ======================================================
-      # STEP 7: Upload Plan
-      # ======================================================
-      # Plan ko next job ke liye save kar rahe hain.
+      # Upload Terraform Plan
       # ======================================================
 
       - name: Upload Terraform Plan
@@ -115,11 +135,7 @@ jobs:
 
     name: Terraform Apply
 
-    # ========================================================
-    # IMPORTANT:
-    # Apply tabhi chalega jab plan successful ho.
-    # ========================================================
-
+    # Apply tabhi chalega jab Plan successful ho
     needs: terraform-plan
 
     runs-on: [self-hosted, Windows, X64]
@@ -127,14 +143,15 @@ jobs:
     steps:
 
       # ======================================================
-      # STEP 1: Checkout Repository
+      # Checkout repository
       # ======================================================
 
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+
       # ======================================================
-      # STEP 2: Azure Login
+      # Azure Login
       # ======================================================
 
       - name: Login to Azure
@@ -144,8 +161,9 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+
       # ======================================================
-      # STEP 3: Download Plan
+      # Download Terraform Plan
       # ======================================================
 
       - name: Download Terraform Plan
@@ -153,16 +171,18 @@ jobs:
         with:
           name: terraform-plan
 
+
       # ======================================================
-      # STEP 4: Terraform Init
+      # Terraform Init
       # ======================================================
 
       - name: Terraform Init
         shell: powershell
         run: terraform init
 
+
       # ======================================================
-      # STEP 5: Terraform Apply
+      # Terraform Apply
       # ======================================================
 
       - name: Terraform Apply

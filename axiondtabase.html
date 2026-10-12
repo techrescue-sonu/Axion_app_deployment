@@ -1,0 +1,50 @@
+# create one postgresql database.
+# connect via pgadmin To create a PostgreSQL database and connect to it via pgAdmin, follow these steps:
+# NOte: allow clinet IP address on postgresql firewall to allow connections from pgAdmin.
+# after that , follow these steps:
+# create a new database in PostgreSQL and table.
+CREATE TABLE telemetry (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    device_id VARCHAR(50) NOT NULL,
+    device_type VARCHAR(20) NOT NULL,
+    refinery_region VARCHAR(50) NOT NULL,
+
+    timestamp TIMESTAMP NOT NULL,
+
+    temperature DOUBLE PRECISION NOT NULL,
+    vibration DOUBLE PRECISION NOT NULL,
+    current DOUBLE PRECISION NOT NULL,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for telemetry queries
+CREATE INDEX idx_telemetry_device_id
+ON telemetry(device_id);
+
+CREATE INDEX idx_telemetry_timestamp
+ON telemetry(timestamp DESC);
+
+
+# after that insert some sample data into the telemetry table to test the setup. You can use the following SQL commands to insert sample records:
+INSERT INTO telemetry (
+    device_id,
+    device_type,
+    refinery_region,
+    timestamp,
+    temperature,
+    vibration,
+    current
+)
+VALUES
+    ('DEV-001', 'MOTOR', 'NORTH', '2026-10-06 08:00:00', 72.4, 1.8, 16.2),
+    ('DEV-001', 'MOTOR', 'NORTH', '2026-10-06 09:00:00', 74.1, 1.9, 16.8),
+    ('DEV-001', 'MOTOR', 'NORTH', '2026-10-06 10:00:00', 76.3, 2.1, 17.5),
+    ('DEV-002', 'PUMP', 'WEST', '2026-10-06 08:00:00', 68.2, 1.4, 12.7),
+    ('DEV-002', 'PUMP', 'WEST', '2026-10-06 09:00:00', 69.8, 1.5, 13.1),
+    ('DEV-002', 'PUMP', 'WEST', '2026-10-06 10:00:00', 71.2, 1.6, 13.5),
+    ('DEV-003', 'MOTOR', 'EAST', '2026-10-06 08:00:00', 75.1, 2.0, 17.2),
+    ('DEV-003', 'MOTOR', 'EAST', '2026-10-06 09:00:00', 77.4, 2.2, 18.1),
+    ('DEV-003', 'MOTOR', 'EAST', '2026-10-06 10:00:00', 79.6, 2.5, 19.0);
+

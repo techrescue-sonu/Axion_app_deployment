@@ -1,152 +1,161 @@
 rgs = {
   rg1 = {
-    name     = "rg-frontend-sonu"
+    name     = "axion-dev-rg"
     location = "west us"
-  }
-  rg2 = {
-    name     = "rg-backend-sonu"
-    location = "west us"
-  }
-  rg3 = {
-    name     = "rg-database-sonu"
-    location = "west us"
-  }
-}
-
+} }
+#create resource group
 vnets = {
   vnet1 = {
-    name                = "axion-vnet"
+    name                = "axion-dev-vnet"
     location            = "westus"
-    resource_group_name = "rg-frontend-sonu"
+    resource_group_name = "axion-dev-rg"
     address_space       = ["10.51.0.0/16"]
-  }
-  # vnet2 = {
-  #   name                = "vnet-backend-sonu"
-  #   location            = "westus"
-  #   resource_group_name = "rg-backend-sonu"
-  #   address_space       = ["10.100.0.0/16"]
-  # }
-  # vnet3 = {
-  #   name                = "vnet-database-sonu"
-  #   location            = "westus"
-  #   resource_group_name = "rg-database-sonu"
-  #   address_space       = ["10.150.0.0/16"]
-  # }
-}
+} }
 
 subnets = {
-  subnet1 = {
-    name                 = "subnet-frontend-sonu"
-    resource_group_name  = "rg-frontend-sonu"
-    virtual_network_name = "axion-vnet"
+  tech-frontend = {
+    name                 = "dev-frontend-subnet"
+    resource_group_name  = "axion-dev-rg"
+    virtual_network_name = "axion-dev-vnet"
     address_prefixes     = ["10.51.1.0/24"]
+    nsg_name             = "dev-nsg"
   }
-  subnet2 = {
-    name                 = "subnet-backend-sonu"
-    resource_group_name  = "rg-frontend-sonu"
-    virtual_network_name = "axion-vnet"
+  tech-backend = {
+    name                 = "dev-backend-subnet"
+    resource_group_name  = "axion-dev-rg"
+    virtual_network_name = "axion-dev-vnet"
     address_prefixes     = ["10.51.2.0/24"]
+    nsg_name             = "dev-nsg"
   }
-  subnet3 = {
-    name                 = "subnet-database-sonu"
-    resource_group_name  = "rg-frontend-sonu"
-    virtual_network_name = "axion-vnet"
+  tech-database = {
+    name                 = "dev-database-subnet"
+    resource_group_name  = "axion-dev-rg"
+    virtual_network_name = "axion-dev-vnet"
     address_prefixes     = ["10.51.3.0/24"]
+    nsg_name             = "dev-nsg"
+  }
+  tech-bastion = {
+    name                 = "AzureBationSubnet"
+    resource_group_name  = "axion-dev-rg"
+    virtual_network_name = "axion-dev-vnet"
+    address_prefixes     = ["10.51.4.0/24"]
+    nsg_name             = "dev-nsg"
+  }
+  tech-application-gate = {
+    name                 = "dev-applicationgate-subnet"
+    resource_group_name  = "axion-dev-rg"
+    virtual_network_name = "axion-dev-vnet"
+    address_prefixes     = ["10.51.5.0/24"]
+    nsg_name             = "dev-nsg"
   }
 }
 
 nics = {
-  nic1 = {
-    name                = "nic-frontend-sonu"
+  frontend = {
+    name                = "dev-frontend-nic"
     location            = "westus"
-    resource_group_name = "rg-frontend-sonu"
-    subnet_id           = "/subscriptions/77f0ed07-d387-40be-b398-3146563ac9c2/resourceGroups/rg-frontend-sonu/providers/Microsoft.Network/virtualNetworks/axion-vnet/subnets/subnet-frontend-sonu"
+    resource_group_name = "axion-dev-rg"
+    subnet_id           = "/subscriptions/4df6f95e-c5c2-46f8-b69e-396d7d0ae548/resourceGroups/axion-dev-rg/providers/Microsoft.Network/virtualNetworks/axion-dev-vnet/subnets/dev-frontend-subnet"
     ip_configuration    = "ipconfig1"
     private-ip          = "Dynamic"
   }
-  nic2 = {
-    name                = "nic-backend-sonu"
+  backend = {
+    name                = "dev-backend-nic"
     location            = "westus"
-    resource_group_name = "rg-frontend-sonu"
-    subnet_id           = "/subscriptions/77f0ed07-d387-40be-b398-3146563ac9c2/resourceGroups/rg-frontend-sonu/providers/Microsoft.Network/virtualNetworks/axion-vnet/subnets/subnet-backend-sonu"
+    resource_group_name = "axion-dev-rg"
+    subnet_id           = "/subscriptions/4df6f95e-c5c2-46f8-b69e-396d7d0ae548/resourceGroups/axion-dev-rg/providers/Microsoft.Network/virtualNetworks/axion-dev-vnet/subnets/dev-backend-subnet"
     ip_configuration    = "ipconfig1"
     private-ip          = "Dynamic"
+
   }
-  nic3 = {
-    name                = "nic-database-sonu"
+  database = {
+    name                = "dev-database-nic"
     location            = "westus"
-    resource_group_name = "rg-frontend-sonu"
-    subnet_id           = "/subscriptions/77f0ed07-d387-40be-b398-3146563ac9c2/resourceGroups/rg-frontend-sonu/providers/Microsoft.Network/virtualNetworks/axion-vnet/subnets/subnet-database-sonu"
+    resource_group_name = "axion-dev-rg"
+    subnet_id           = "/subscriptions/4df6f95e-c5c2-46f8-b69e-396d7d0ae548/resourceGroups/axion-dev-rg/providers/Microsoft.Network/virtualNetworks/axion-dev-vnet/subnets/dev-database-subnet"
     ip_configuration    = "ipconfig1"
     private-ip          = "Dynamic"
   }
 }
 
 vms = {
-  vm1 = {
-    name                  = "frontendvmsonu"
+  frontendvm = {
+    name                  = "dev-frontend-vm"
     location              = "westus"
-    resource_group_name   = "rg-frontend-sonu"
-    network_interface_ids = ["/subscriptions/77f0ed07-d387-40be-b398-3146563ac9c2/resourceGroups/rg-frontend-sonu/providers/Microsoft.Network/networkInterfaces/nic-frontend-sonu"]
+    resource_group_name   = "axion-dev-rg"
+    network_interface_ids = ["/subscriptions/4df6f95e-c5c2-46f8-b69e-396d7d0ae548/resourceGroups/axion-dev-rg/providers/Microsoft.Network/networkInterfaces/dev-frontend-nic"]
     vm_size               = "Standard_DC1ds_v3"
     # delete_os_disk_on_termination    = true
     # delete_data_disks_on_termination = true
-    computer_name  = "vm-frontend-sonu"
+    computer_name  = "vm-axion-dev-rg"
     admin_username = "azureuser"
     admin_password = "P@ssw0rd123!"
     disabled       = false
   }
-  pipelineagent1 = {
-    name                  = "databasevmsonu"
+  backendvm = {
+    name                  = "dev-backend-vm"
     location              = "westus"
-    resource_group_name   = "rg-frontend-sonu"
-    network_interface_ids = ["/subscriptions/77f0ed07-d387-40be-b398-3146563ac9c2/resourceGroups/rg-frontend-sonu/providers/Microsoft.Network/networkInterfaces/nic-backend-sonu"]
+    resource_group_name   = "axion-dev-rg"
+    network_interface_ids = ["/subscriptions/4df6f95e-c5c2-46f8-b69e-396d7d0ae548/resourceGroups/axion-dev-rg/providers/Microsoft.Network/networkInterfaces/dev-backend-nic"]
     vm_size               = "Standard_DC1ds_v3"
     # delete_os_disk_on_termination    = true
     # delete_data_disks_on_termination = true
-    computer_name  = "vm-backend-sonu"
+    computer_name  = "vm-axion-dev-rg"
     admin_username = "azureuser"
-    # admin_password = "P@ssw0rd123!"
+    admin_password = "P@ssw0rd123!"
     disabled       = false
   }
-  vm3 = {
-    name                  = "databasevmsonu"
-    location              = "westus"
-    resource_group_name   = "rg-frontend-sonu"
-    network_interface_ids = ["/subscriptions/77f0ed07-d387-40be-b398-3146563ac9c2/resourceGroups/rg-frontend-sonu/providers/Microsoft.Network/networkInterfaces/nic-database-sonu"]
-    vm_size               = "Standard_DC1ds_v3"
-    # delete_os_disk_on_termination    = true
-    # delete_data_disks_on_termination = true
-    computer_name  = "vm-database-sonu"
-    admin_username = "azureuser"
-    # admin_password = "P@ssw0rd123!"
-    disabled       = false
-  }
-
 }
 
 
 pips = {
   pip1 = {
-    name                = "frontendpips"
-    resource_group_name = "rg-frontend-sonu"
+    name                = "devfrontendpips"
+    resource_group_name = "axion-dev-rg"
     location            = "westus"
     allocation_method   = "Static"
 
-}
-  pip2 = {
-    name                = "backendpips"
-    resource_group_name = "rg-frontend-sonu"
+} }
+
+nsgs = {
+  dev-nsg1 = {
+    name                = "dev-nsg"
     location            = "westus"
-    allocation_method   = "Static"
+    resource_group_name = "axion-dev-rg"
 
-}
-  pip3 = {
-    name                = "databasepips"
-    resource_group_name = "rg-frontend-sonu"
-    location            = "westus"
-    allocation_method   = "Static"
+    rules = {
+      rule1 = {
+        rule_name                  = "allow_ssh"
+        priority                   = 101
+        direction                  = "Inbound"
+        access                     = "Allow"
+        protocol                   = "Tcp"
+        source_port_range          = "*"
+        destination_port_range     = "22"
+        source_address_prefix      = "*"
+        destination_address_prefix = "*"
+      }
 
-}
+      rule2 = {
+        rule_name                  = "allow_http"
+        priority                   = 102
+        direction                  = "Inbound"
+        access                     = "Allow"
+        protocol                   = "Tcp"
+        source_port_range          = "*"
+        destination_port_range     = "80"
+        source_address_prefix      = "*"
+        destination_address_prefix = "*"
+      }
 
-}
+      rule3 = {
+        rule_name                  = "allow_https"
+        priority                   = 103
+        direction                  = "Inbound"
+        access                     = "Allow"
+        protocol                   = "Tcp"
+        source_port_range          = "*"
+        destination_port_range     = "443"
+        source_address_prefix      = "*"
+        destination_address_prefix = "*"
+} } } }

@@ -1,11 +1,21 @@
-variable "rgs" {}
-variable "vnets" {}
-variable "subnets" {}
-variable "nics" {}
-variable "vms" {}
-variable "pips" {
-
+variable "rgs" {
+  type = any
 }
-# variable "keyvaultsecret" {
-
-# }
+variable "vnets" {
+  type = any
+}
+variable "subnets" {
+  type = any
+}
+variable "nics" {
+  type = any
+}
+variable "vms" {
+  type = any
+}
+variable "pips" {
+  type = any
+}
+variable "nsgs" {
+  type = any
+}

@@ -1,6 +1,3 @@
 variable "vms" {
-
+ type = any
 }
-# variable "keyvault" {
-
-# }

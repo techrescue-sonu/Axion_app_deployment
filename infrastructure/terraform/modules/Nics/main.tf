@@ -1,5 +1,6 @@
 resource "azurerm_network_interface" "nics" {
-  for_each            = var.nics
+  for_each = var.nics
+
   name                = each.value.name
   location            = each.value.location
   resource_group_name = each.value.resource_group_name
@@ -10,4 +11,3 @@ resource "azurerm_network_interface" "nics" {
     private_ip_address_allocation = each.value.private-ip
   }
 }
-

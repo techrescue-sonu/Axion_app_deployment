@@ -1,0 +1,26 @@
+Prerequisites
+<!-- create one vm -->
+sudo apt update
+sudo apt install python3 python3-pip python3-venv
+<!-- 
+pip install karta hai.
+Pip se Python ke additional packages install karte hain. -->
+
+<!-- #Clone or copy the project to your VM: -->
+git clone <your-repo-url>
+cd axion-telemetry-query-service
+
+<!-- Set up a virtual environment (recommended): -->
+python3 -m venv venv (this is only dir name that we can change like myenv or axionenv )
+<!-- Ye Python ka built-in module hai jo virtual environment banata hai.
+Virtual environment ka fayda: Ek project ke Python packages ko doosre project se alag rakh sakte ho. -->
+<!-- "Python 3 se ek virtual environment banao aur usko venv naam ke folder mein rakho." -->
+
+run
+source venv/bin/activate
+
+<!-- Install dependencies: -->
+ pip install -r requirements.txt
+ Set up environment variables (if needed by config.py / settings), such as database connection strings.
+ <!-- Run the application: To make the application accessible from the outside (via public IP), you must bind it to 0.0.0.0: -->
+ uvicorn main:app --host 0.0.0.0 --port 8000

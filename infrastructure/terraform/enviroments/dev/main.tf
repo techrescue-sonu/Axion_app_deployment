@@ -1,6 +1,6 @@
 module "resourceg" {
-  source     = "../../modules/resourcegroups"
-  rgs = var.rgs
+  source = "../../modules/resourcegroups"
+  rgs    = var.rgs
 }
 
 
@@ -12,7 +12,7 @@ module "virtual_network" {
 }
 
 module "subnets" {
-  depends_on = [module.virtual_network]
+  depends_on = [module.virtual_network, module.network_security_groups]
   source     = "../../modules/subnets"
   subnets    = var.subnets
 }
@@ -38,4 +38,8 @@ module "pips" {
 
 }
 
-
+module "network_security_groups" {
+  depends_on = [module.resourceg]
+  source     = "../../modules/nsg"
+  nsgs       = var.nsgs
+}

@@ -1,2 +1,3 @@
 variable "vnets" {
+     type = any
 }
